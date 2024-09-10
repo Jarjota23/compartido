@@ -1,151 +1,116 @@
 # -*- coding: utf-8 -*-
 import os
 
-#tamanioVertical=1.08
-#tamanioHorizontal=1.08
-#desplazamientoVertical= -0.04
-#desplazamientoHorizontal= -0.04
+# Valores por defecto
+tamanioVertical = 1
+tamanioHorizontal = 1
+desplazamientoVertical = 0
+desplazamientoHorizontal = 0
+newTransformationMatrixDere = ""
+newTransformationMatrixIzq = ""
 
 
-tamanioVertical=1
-tamanioHorizontal=1
-desplazamientoVertical= 0
-desplazamientoHorizontal= 0
-newTrasformationMatrixDere= ""
-newTrasformationMatrixIzq = ""
-
-
-def saveTrasformationMatrix():
+def saveTransformationMatrix():
+    """Función para guardar la matriz de transformación."""
     print("Section \"InputClass\"")
     print("        Identifier \"TouchLeft\"")
     print("        MatchTag \"TouchLeft\"")
-    print("	       Option \"TransformationMatrix\" \""+ str( newTrasformationMatrixDere ) + "\"")
-    print("	       Driver \"libinput\"")
-    print("EndSection")
+    print(f"        Option \"TransformationMatrix\" \"{newTransformationMatrixIzq}\"")
+    print("        Driver \"libinput\"")
+    print("EndSection\n")
 
-
-    print()
     print("Section \"InputClass\"")
     print("        Identifier \"TouchRight\"")
     print("        MatchTag \"TouchRight\"")
-    print("	       Option \"TransformationMatrix\" \""+ str( newTrasformationMatrixIzq ) + "\"")
-    print("	       Driver \"libinput\"")
+    print(f"        Option \"TransformationMatrix\" \"{newTransformationMatrixDere}\"")
+    print("        Driver \"libinput\"")
     print("EndSection")
 
 
 def menu():
-   print("==============================================")
-   print("1.  Aumentar horizontalmente. Derecha")
-   print("2.  Aumentar horizontalmente. Izquierda")
-   print("3.  Aumentar verticalmente. Abajo")
-   print("4.  Aumentar verticalmente. Arriba")
-   print("5.  Restablecer")
-   print("6.  Guardar cambios")
-   print("7.  Cambiar monitor")
-
-   print("8.  Salir")
-
-   print("==============================================")
-
-
-
-seleccion = 0
-cantidad = 0.01
-monitor=0
-idXinput=0
-error=-1
-
-while error !=0:
-
-    print("Que monitor quieres calibrar")
+    """Muestra el menú de opciones."""
     print("==============================================")
-    print("1.  Derecho")
-    print("2.  Izquierdo")
+    print("1.  Aumentar horizontalmente. Derecha")
+    print("2.  Aumentar horizontalmente. Izquierda")
+    print("3.  Aumentar verticalmente. Abajo")
+    print("4.  Aumentar verticalmente. Arriba")
+    print("5.  Restablecer")
+    print("6.  Guardar cambios")
+    print("7.  Cambiar monitor")
+    print("8.  Salir")
     print("==============================================")
-    try:
-        monitor = int(input())
-        print("Que id de xinput tiene ese tactil")
-        idXinput = int(input())
-        error=0
 
-
-    except Exception:
-        error=-1
-        monitor = 0
-        idXinput = 0
-
-
-
-while seleccion != 9:
-    menu()
-    try:
-        seleccion = int(input())
-    except Exception:
-        seleccion = 7
-
-
-    if  (seleccion < 8):
-
-        if seleccion == 1:
-            tamanioHorizontal += cantidad
-
-        elif  seleccion == 2:
-            tamanioHorizontal += cantidad
-            desplazamientoHorizontal -= cantidad
-
-        elif  seleccion == 3:
-            tamanioVertical += cantidad
-
-        elif  seleccion == 4:
-            tamanioVertical += cantidad
-            desplazamientoVertical -= cantidad
-
-        elif seleccion == 5:
-            print("Matriz tactil:  1 0 0 0 1 0 0 0 1")
-            tamanioVertical = 1
-            tamanioHorizontal = 1
-            desplazamientoVertical = 0
-            desplazamientoHorizontal = 0
-            comando="xinput set-prop "+ str(idXinput)+ " 'Coordinate Transformation Matrix' 1 0 0 0 1 0 0 0 1"
-            os.system(str(comando))
-
-
-        elif seleccion == 6:
-            print("Guarda estos valores en /usr/share/X11/xorg.conf.d/10-touch-screen.conf")
-            saveTrasformationMatrix()
-        elif seleccion == 7:
+def seleccionar_monitor():
+    """Función para seleccionar monitor y obtener el ID de xinput."""
+    global monitor, idXinput
+    error = -1
+    while error != 0:
+        try:
+            print("¿Qué monitor quieres calibrar?")
+            print("==============================================")
+            print("1.  Derecho")
+            print("2.  Izquierdo")
+            print("==============================================")
+            monitor = int(input())
+            print("¿Qué id de xinput tiene ese táctil?")
+            idXinput = int(input())
+            error = 0
+        except ValueError:
+            print("Entrada no válida. Intenta de nuevo.")
             error = -1
 
-            while error != 0:
 
-                print("Que monitor quieres calibrar")
-                print("==============================================")
-                print("1.  Derecho")
-                print("2.  Izquierdo")
-                print("==============================================")
-                try:
-                    monitor = int(input())
-                    print("Que id de xinput tiene ese tactil")
-                    idXinput = int(input())
-                    error = 0
+# Inicialización de variables
+seleccion = 0
+cantidad = 0.01
+monitor = 0
+idXinput = 0
 
+# Seleccionar monitor al inicio
+seleccionar_monitor()
 
-                except Exception:
-                    error = -1
-                    monitor = 0
-                    idXinput = 0
+# Bucle principal del programa
+while seleccion != 8:
+    menu()
+    
+    try:
+        seleccion = int(input())
+    except ValueError:
+        print("Entrada no válida, seleccionando salir.")
+        seleccion = 8
 
-        if (monitor == 1 and seleccion < 5):
-            newTrasformationMatrixDere = str(tamanioHorizontal / 2) + " 0 " + str(desplazamientoHorizontal + 0.5) + " 0 " + str(
-                tamanioVertical) + " " + str(desplazamientoVertical) + " 0 0 1"
-            comando = "xinput set-prop "+ str(idXinput)+" 'Coordinate Transformation Matrix' " + str(newTrasformationMatrixDere)
-            print("Matriz asignada al tactil. Derecha: " + str(newTrasformationMatrixDere))
-            os.system(str(comando))
-        elif (monitor == 2 and seleccion < 5):
-            newTrasformationMatrixIzq = str(tamanioHorizontal / 2) + " 0 " + str(desplazamientoHorizontal) + " 0 " + str(
-                tamanioVertical) + " " + str(desplazamientoVertical) + " 0 0 1"
-            comando = "xinput set-prop "+ str(idXinput)+ " 'Coordinate Transformation Matrix' " + str(newTrasformationMatrixIzq)
+    if seleccion == 1:
+        tamanioHorizontal += cantidad
+    elif seleccion == 2:
+        tamanioHorizontal += cantidad
+        desplazamientoHorizontal -= cantidad
+    elif seleccion == 3:
+        tamanioVertical += cantidad
+    elif seleccion == 4:
+        tamanioVertical += cantidad
+        desplazamientoVertical -= cantidad
+    elif seleccion == 5:
+        print("Restableciendo matriz táctil: 1 0 0 0 1 0 0 0 1")
+        tamanioVertical = 1
+        tamanioHorizontal = 1
+        desplazamientoVertical = 0
+        desplazamientoHorizontal = 0
+        comando = f"xinput set-prop {idXinput} 'Coordinate Transformation Matrix' 1 0 0 0 1 0 0 0 1"
+        os.system(comando)
+    elif seleccion == 6:
+        print("Guarda estos valores en /usr/share/X11/xorg.conf.d/10-touch-screen.conf")
+        saveTransformationMatrix()
+    elif seleccion == 7:
+        seleccionar_monitor()
 
-            print("Matriz asignada al tactil. Izquierda " + str(newTrasformationMatrixIzq))
-            os.system(str(comando))
-
+    if seleccion in [1, 2, 3, 4]:
+        if monitor == 1:
+            newTransformationMatrixDere = f"{tamanioHorizontal / 2} 0 {desplazamientoHorizontal + 0.5} 0 {tamanioVertical} {desplazamientoVertical} 0 0 1"
+            comando = f"xinput set-prop {idXinput} 'Coordinate Transformation Matrix' {newTransformationMatrixDere}"
+            print(f"Matriz asignada al táctil. Derecha: {newTransformationMatrixDere}")
+            os.system(comando)
+        elif monitor == 2:
+            newTransformationMatrixIzq = f"{tamanioHorizontal / 2} 0 {desplazamientoHorizontal} 0 {tamanioVertical} {desplazamientoVertical} 0 0 1"
+            comando = f"xinput set-prop {idXinput} 'Coordinate Transformation Matrix' {newTransformationMatrixIzq}"
+            print(f"Matriz asignada al táctil. Izquierda: {newTransformationMatrixIzq}")
+            os.system(comando)

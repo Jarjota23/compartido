@@ -2,6 +2,7 @@
 import os
 import tkinter as tk
 from tkinter import messagebox
+import tkinter.simpledialog
 
 # Default values
 verticalSize = 1
@@ -21,50 +22,54 @@ step_size = 0.01
 root = tk.Tk()
 root.title("Touchscreen Calibration")
 root.geometry("400x400")
-
+#Function to save the transformation matrix.
 def save_transformation_matrix():
-    """Function to save the transformation matrix."""
     messagebox.showinfo("Save", "Save these values to /usr/share/X11/xorg.conf.d/10-touch-screen.conf")
     print("Section \"InputClass\"")
     print("        Identifier \"TouchLeft\"")
     print("        MatchTag \"TouchLeft\"")
-    print(f"        Option \"TransformationMatrix\" \"{newTransformationMatrixLeft}\"")
+    print("        Option \"TransformationMatrix\" \""+str(newTransformationMatrixLeft)+"\"")
     print("        Driver \"libinput\"")
     print("EndSection\n")
 
     print("Section \"InputClass\"")
     print("        Identifier \"TouchRight\"")
     print("        MatchTag \"TouchRight\"")
-    print(f"        Option \"TransformationMatrix\" \"{newTransformationMatrixRight}\"")
+    print("        Option \"TransformationMatrix\" \""+str(newTransformationMatrixRight)+"\"")
     print("        Driver \"libinput\"")
     print("EndSection")
 
+
+#Reset touch matrix to default values.
 def reset_values():
-    """Reset touch matrix to default values."""
     global verticalSize, horizontalSize, verticalShift, horizontalShift
     verticalSize = 1
     horizontalSize = 1
     verticalShift = 0
     horizontalShift = 0
-    command = f"xinput set-prop {xinput_id} 'Coordinate Transformation Matrix' 1 0 0 0 1 0 0 0 1"
+    command = "xinput set-prop "+str(xinput_id)+" 'Coordinate Transformation Matrix' 1 0 0 0 1 0 0 0 1"
     os.system(command)
     messagebox.showinfo("Reset", "Touch matrix reset to default: 1 0 0 0 1 0 0 0 1")
     print("Touch matrix reset to default.")
 
+
+#Apply transformation matrix based on current values.
 def apply_transformation():
-    """Apply transformation matrix based on current values."""
     global newTransformationMatrixRight, newTransformationMatrixLeft
 
     if monitor == 1:
-        newTransformationMatrixRight = f"{horizontalSize / 2} 0 {horizontalShift + 0.5} 0 {verticalSize} {verticalShift} 0 0 1"
-        command = f"xinput set-prop {xinput_id} 'Coordinate Transformation Matrix' {newTransformationMatrixRight}"
+        print("----------------------------------------")
+
+        newTransformationMatrixRight = str(horizontalSize / 2)+" 0 "+str(horizontalShift + 0.5)+" 0 "+str(verticalSize)+" "+str(verticalShift)+" 0 0 1"
+        command = "xinput set-prop "+str(xinput_id)+" 'Coordinate Transformation Matrix' "+str(newTransformationMatrixRight)+""
         os.system(command)
-        print(f"Assigned matrix to touch device. Right: {newTransformationMatrixRight}")
+        print("Assigned matrix to touch device. Right: "+str(newTransformationMatrixRight)+"")
     elif monitor == 2:
-        newTransformationMatrixLeft = f"{horizontalSize / 2} 0 {horizontalShift} 0 {verticalSize} {verticalShift} 0 0 1"
-        command = f"xinput set-prop {xinput_id} 'Coordinate Transformation Matrix' {newTransformationMatrixLeft}"
+        print("----------------------------------------")
+        newTransformationMatrixLeft = str(horizontalSize / 2)+" 0 "+str(horizontalShift)+" 0 "+str(verticalSize) +" "+str(verticalShift)+" 0 0 1"
+        command = "xinput set-prop "+str(xinput_id)+" 'Coordinate Transformation Matrix' "+str(newTransformationMatrixLeft)+""
         os.system(command)
-        print(f"Assigned matrix to touch device. Left: {newTransformationMatrixLeft}")
+        print("Assigned matrix to touch device. Left: "+str(newTransformationMatrixLeft)+"")
 
 def increase_horizontal_right():
     global horizontalSize
@@ -93,6 +98,7 @@ def change_monitor(new_monitor):
     monitor = new_monitor
     # Get xinput_id from the user via dialog box
     xinput_id = int(tk.simpledialog.askstring("XInput ID", "Enter the xinput ID for the touch device:"))
+
 
 # Button functions mapped to the actions
 tk.Button(root, text="Increase Horizontal (Right)", command=increase_horizontal_right).pack(pady=5)

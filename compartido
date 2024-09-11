@@ -58,14 +58,14 @@ def apply_transformation():
     global newTransformationMatrixRight, newTransformationMatrixLeft
 
     if monitor == 1:
-        print("----------------------------------------")
+        print("----------------------------------------------------")
 
         newTransformationMatrixRight = str(horizontalSize / 2)+" 0 "+str(horizontalShift + 0.5)+" 0 "+str(verticalSize)+" "+str(verticalShift)+" 0 0 1"
         command = "xinput set-prop "+str(xinput_id)+" 'Coordinate Transformation Matrix' "+str(newTransformationMatrixRight)+""
         os.system(command)
         print("Assigned matrix to touch device. Right: "+str(newTransformationMatrixRight)+"")
     elif monitor == 2:
-        print("----------------------------------------")
+        print("----------------------------------------------------")
         newTransformationMatrixLeft = str(horizontalSize / 2)+" 0 "+str(horizontalShift)+" 0 "+str(verticalSize) +" "+str(verticalShift)+" 0 0 1"
         command = "xinput set-prop "+str(xinput_id)+" 'Coordinate Transformation Matrix' "+str(newTransformationMatrixLeft)+""
         os.system(command)
@@ -97,8 +97,18 @@ def change_monitor(new_monitor):
     global monitor, xinput_id
     monitor = new_monitor
     # Get xinput_id from the user via dialog box
-    xinput_id = int(tk.simpledialog.askstring("XInput ID", "Enter the xinput ID for the touch device:"))
+    try:
+        xinput_id = int(tk.simpledialog.askstring("XInput ID", "Enter the xinput ID for the touch device:"))
+        command = "xinput | grep Nuvoton | grep id="+str(xinput_id)
+        exist_id= os.system(command)
 
+        if (exist_id != 0):
+            print("El id no existe")
+            change_monitor(new_monitor)
+
+    except:
+        print("No es válido")
+        change_monitor(new_monitor)
 
 # Button functions mapped to the actions
 tk.Button(root, text="Increase Horizontal (Right)", command=increase_horizontal_right).pack(pady=5)
@@ -107,11 +117,9 @@ tk.Button(root, text="Increase Vertical (Down)", command=increase_vertical_down)
 tk.Button(root, text="Increase Vertical (Up)", command=increase_vertical_up).pack(pady=5)
 tk.Button(root, text="Reset", command=reset_values).pack(pady=5)
 tk.Button(root, text="Save Changes", command=save_transformation_matrix).pack(pady=5)
-
 tk.Label(root, text="Change Monitor").pack(pady=10)
 tk.Button(root, text="Right Monitor", command=lambda: change_monitor(1)).pack(pady=5)
 tk.Button(root, text="Left Monitor", command=lambda: change_monitor(2)).pack(pady=5)
-
 tk.Button(root, text="Exit", command=root.quit).pack(pady=20)
 
 # Start the main loop

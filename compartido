@@ -176,49 +176,72 @@ root.mainloop()
 import subprocess
 import re
 
-# Función para ejecutar un comando y capturar su salida
 def run_command(command):
+    """Ejecuta un comando de shell y devuelve la salida."""
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return result.stdout
 
-# Ejecutar xinput_calibrator --list y extraer el nombre del dispositivo
-device_output = run_command("xinput_calibrator --list")
-device = re.search(r'Device\s"(.+?)"', device_output).group(1)
+def calibrate_touchscreen():
+    """Método para calibrar una pantalla táctil utilizando xinput_calibrator."""
+    
+    # Ejecutar xinput_calibrator --list y extraer el nombre del dispositivo
+    device_output = run_command("xinput_calibrator --list")
+    device_match = re.search(r'Device\s"(.+?)"', device_output)
+    
+    if device_match:
+        device = device_match.group(1)
+    else:
+        print("No se pudo encontrar el dispositivo.")
+        return
+    
+    # Reiniciar la matriz de transformación
+    subprocess.run(f'xinput set-prop "{device}" "Coordinate Transformation Matrix" 1 0 0 0 1 0 0 0 1', shell=True)
+    
+    # Ejecutar xinput_calibrator y capturar la salida
+    out = run_command("xinput_calibrator")
+    
+    # Extraer datos de calibración
+    device_name_match = re.search(r'MatchProduct"\s"(\d+)', out)
+    wtot_match = re.search(r'max_x=(\d+)', out)
+    htot_match = re.search(r'max_y=(\d+)', out)
+    minx_match = re.search(r'MinX"\s"(\d+)', out)
+    maxx_match = re.search(r'MaxX"\s"(\d+)', out)
+    miny_match = re.search(r'MinY"\s"(\d+)', out)
+    maxy_match = re.search(r'MaxY"\s"(\d+)', out)
+    
+    if not all([device_name_match, wtot_match, htot_match, minx_match, maxx_match, miny_match, maxy_match]):
+        print("No se pudieron extraer todos los datos de calibración.")
+        return
+    
+    device_name = device_name_match.group(1)
+    wtot = int(wtot_match.group(1))
+    htot = int(htot_match.group(1))
+    minx = int(minx_match.group(1))
+    maxx = int(maxx_match.group(1))
+    miny = int(miny_match.group(1))
+    maxy = int(maxy_match.group(1))
+    
+    # Calcular los valores de la matriz
+    wtouch = maxx - minx
+    htouch = maxy - miny
+    c0 = wtot / wtouch
+    c1 = -minx / wtouch
+    c2 = htot / htouch
+    c3 = -miny / htouch
+    
+    # Crear la matriz de transformación
+    tf_matrix = f"{c0} 0 {c1} 0 {c2} {c3} 0 0 1"
+    
+    # Aplicar la nueva matriz de transformación
+    subprocess.run(f'xinput set-prop "{device}" "Coordinate Transformation Matrix" {tf_matrix}', shell=True)
+    
+    # Imprimir el contenido para hacer permanente la configuración
+    print(f"To make this permanent, save the following content under '/etc/X11/xorg.conf.d/98-screen-calibration.conf' or '/usr/share/X11/xorg.conf.d/98-screen-calibration.conf'")
+    print(f'Section "InputClass"')
+    print(f'    Identifier "calibration"')
+    print(f'    MatchProduct "{device_name}"')
+    print(f'    Option "TransformationMatrix" "{tf_matrix}"')
+    print('EndSection')
 
-# Reiniciar la matriz de transformación
-subprocess.run(f'xinput set-prop "{device}" "Coordinate Transformation Matrix" 1 0 0 0 1 0 0 0 1', shell=True)
-
-# Ejecutar xinput_calibrator y capturar la salida
-out = run_command("xinput_calibrator")
-
-# Extraer datos de calibración
-device_name = re.search(r'MatchProduct"\s"(\d+)', out).group(1)
-wtot = int(re.search(r'max_x=(\d+)', out).group(1))
-htot = int(re.search(r'max_y=(\d+)', out).group(1))
-minx = int(re.search(r'MinX"\s"(\d+)', out).group(1))
-maxx = int(re.search(r'MaxX"\s"(\d+)', out).group(1))
-miny = int(re.search(r'MinY"\s"(\d+)', out).group(1))
-maxy = int(re.search(r'MaxY"\s"(\d+)', out).group(1))
-
-# Calcular los valores de la matriz
-wtouch = maxx - minx
-htouch = maxy - miny
-c0 = wtot / wtouch
-c1 = -minx / wtouch
-c2 = htot / htouch
-c3 = -miny / htouch
-
-# Crear la matriz de transformación
-tf_matrix = f"{c0} 0 {c1} 0 {c2} {c3} 0 0 1"
-
-# Aplicar la nueva matriz de transformación
-subprocess.run(f'xinput set-prop "{device}" "Coordinate Transformation Matrix" {tf_matrix}', shell=True)
-
-# Imprimir el contenido para hacer permanente la configuración
-print(f"To make this permanent, save the following content under '/etc/X11/xorg.conf.d/98-screen-calibration.conf' or '/usr/share/X11/xorg.conf.d/98-screen-calibration.conf'")
-print(f'Section "InputClass"')
-print(f'    Identifier "calibration"')
-print(f'    MatchProduct "{device_name}"')
-print(f'    Option "TransformationMatrix" "{tf_matrix}"')
-print('EndSection')
-
+# Llamar al método para ejecutar la calibración
+calibrate_touchscreen()
